@@ -22,12 +22,11 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
             handler.sendMessage(chatId, "Эта команда используется реплаем!")
             return
         }
-        val botId = Methods.getMe().call(handler).id
-        if (!isAdmin(chatId, botId)) {
+        if (!Methods.getMe().call(handler).id.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У бота нет прав на это!")
             return
         }
-        if (!isAdmin(chatId, message.from.id)) {
+        if (!message.from.id.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return
         }
@@ -47,6 +46,13 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
         handler.sendMessage(chatId, "✅ Этот юзер больше не слоу!")
     }
 
-    private fun isAdmin(chatId: Long, userId: Int) =
-        Methods.getChatMember(chatId, userId).call(handler).canRestrictUsers
+    private fun Int.canRestrictIn(chatId: Long): Boolean {
+        val admins = Methods.getChatAdministrators(chatId).call(handler)
+        for (admin in admins) {
+            if (admin.user.id == this && admin.canRestrictUsers)
+                return true
+        }
+        return false
+
+    }
 }
