@@ -22,7 +22,7 @@ class Help(
                 continue
 
             val helpline = "$cmd - ${executor.desc}"
-            text.append(helpline)
+            text.appendln(helpline)
         }
         handler.sendMessage(message.chatId, text.toString())
     }
