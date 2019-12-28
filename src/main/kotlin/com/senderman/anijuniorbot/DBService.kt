@@ -4,7 +4,7 @@ import com.senderman.anijuniorbot.tempobjects.SlowUser
 
 interface DBService {
 
-    fun addSlowUser(userId:Int, time:Int)
+    fun addSlowUser(user: SlowUser)
     fun removeSlowUser(userId: Int)
     fun getSlowUsers(): Set<SlowUser>
 }

@@ -7,7 +7,7 @@ plugins {
 
 group 'com.senderman'
 version '1.0'
-mainClassName = 'com.annimon.tgbotsmodule.Runner'
+mainClassName = 'com.senderman.anijuniorbot.AnijuniorBotKt'
 
 sourceCompatibility = 13
 

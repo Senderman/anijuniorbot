@@ -8,7 +8,6 @@ import com.senderman.neblib.AbstractExecutorKeeper
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
-import java.time.Duration
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -43,12 +42,7 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
         }
 
         slowUsers[message.from.id]?.let { user ->
-            Methods.Administration.restrictChatMember()
-                .setChatId(chatId)
-                .setUserId(user.userId)
-                .setCanSendMessages(false)
-                .forTimePeriod(Duration.ofSeconds(user.time.toLong()))
-                .call(this)
+            filterSlowMode(user, message)
         }
 
         if (!message.hasText())
@@ -91,5 +85,31 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
 
     override fun getBotToken(): String {
         return Services.config.login.split(" ".toRegex(), 2)[1]
+    }
+
+    private fun filterSlowMode(user: SlowUser, message: Message) {
+        val restriction = Methods.Administration.restrictChatMember().apply {
+            setChatId(message.chatId)
+            userId = user.userId
+            untilDateInSeconds = (System.currentTimeMillis() / 1000).toInt() + user.time
+        }
+        when {
+            !user.canSendMessages -> restriction.setCanSendMessages(false)
+
+            !user.canSendMediaMessages
+                    && (message.hasAudio() || message.hasDocument() || message.hasPhoto() || message.hasVideo()
+                    || message.hasVideoNote()) -> restriction
+                .setCanSendMessages(true)
+                .setCanSendMediaMessages(false)
+
+            !user.canSendOtherMessages && (message.hasAnimation() || message.hasSticker()) -> restriction
+                .setCanSendMessages(true)
+                .setCanSendMediaMessages(true)
+                .setCanSendOtherMessages(false)
+
+            else -> return
+
+        }
+        restriction.call(this)
     }
 }

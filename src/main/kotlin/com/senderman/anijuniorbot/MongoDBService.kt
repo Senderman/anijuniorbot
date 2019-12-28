@@ -1,49 +1,39 @@
 package com.senderman.anijuniorbot
 
 import com.mongodb.client.model.Filters.eq
-import com.mongodb.client.model.Filters.exists
 import com.senderman.anijuniorbot.tempobjects.SlowUser
 import com.senderman.neblib.MongoClientKeeper
 import org.bson.Document
 
 class MongoDBService : DBService {
     private val database = MongoClientKeeper.client.getDatabase("anijunior")
-    private val users = database.getCollection("users")
+    private val slowUsers = database.getCollection("slowusers")
 
-    private fun createUser(userId: Int) {
-        val doc = users.find(eq("userId", userId)).first()
-        if (doc == null)
-            users.insertOne(Document("userId", userId))
-    }
-
-    override fun addSlowUser(userId: Int, time: Int) {
-        createUser(userId)
-        users.updateOne(
-            eq("userId", userId),
-            Document(
-                "\$set",
-                Document("userId", userId).append("slowtime", time)
-            )
+    override fun addSlowUser(user: SlowUser) {
+        slowUsers.insertOne(
+            Document()
+                .append("userId", user.userId)
+                .append("time", user.time)
+                .append("3", user.canSendMessages)
+                .append("2", user.canSendMediaMessages)
+                .append("1", user.canSendOtherMessages)
         )
     }
 
     override fun removeSlowUser(userId: Int) {
-        users.updateOne(
-            eq("userId", userId),
-            Document(
-                "\$unset",
-                Document("slowtime", 0)
-            )
-        )
+        slowUsers.deleteOne(eq("userId", userId))
     }
 
     override fun getSlowUsers(): Set<SlowUser> {
         val result = HashSet<SlowUser>()
-        for (user in users.find(exists("slowtime", true))) {
+        for (user in slowUsers.find()) {
             result.add(
                 SlowUser(
                     user.getInteger("userId"),
-                    user.getInteger("slowtime")
+                    user.getInteger("time"),
+                    canSendMessages = user.getBoolean("3"),
+                    canSendMediaMessages = user.getBoolean("2"),
+                    canSendOtherMessages = user.getBoolean("1")
                 )
             )
         }
