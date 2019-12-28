@@ -1,11 +1,11 @@
 package com.senderman.anijuniorbot.commands
 
-import com.annimon.tgbotsmodule.api.methods.Methods
 import com.senderman.anijuniorbot.AnijuniorBotHandler
 import com.senderman.anijuniorbot.Services
 import com.senderman.neblib.CommandExecutor
 import org.telegram.telegrambots.meta.api.methods.groupadministration.RestrictChatMember
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 
 class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
@@ -24,7 +24,7 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
             handler.sendMessage(chatId, "Эта команда используется реплаем!")
             return
         }
-        if (!message.from.id.canRestrictIn(chatId)) {
+        if (!message.from.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return
         }
@@ -52,8 +52,7 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
         handler.sendMessage(chatId, "✅ Этот юзер больше не слоу!")
     }
 
-    private fun Int.canRestrictIn(chatId: Long): Boolean {
-        val member = Methods.getChatMember(chatId, this).call(handler)
-        return member.canRestrictUsers ?: false
+    private fun User.canRestrictIn(chatId: Long): Boolean {
+        return SlowMode.canRestrictMembers(chatId, this.id)
     }
 }
