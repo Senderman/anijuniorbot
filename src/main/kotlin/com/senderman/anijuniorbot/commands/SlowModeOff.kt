@@ -52,7 +52,5 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
         handler.sendMessage(chatId, "✅ Этот юзер больше не слоу!")
     }
 
-    private fun User.canRestrictIn(chatId: Long): Boolean {
-        return SlowMode.canRestrictMembers(chatId, this.id)
-    }
+    private fun User.canRestrictIn(chatId: Long) = SlowMode.canRestrictMembers(chatId, this.id)
 }

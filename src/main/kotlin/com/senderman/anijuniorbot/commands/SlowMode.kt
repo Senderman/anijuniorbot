@@ -63,14 +63,12 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
         handler.sendMessage(chatId, "✅ Слоумод для этого юзера активирован!", message.messageId)
     }
 
-    private fun User.canRestrictIn(chatId: Long): Boolean {
-        return canRestrictMembers(chatId, this.id)
-    }
+    private fun User.canRestrictIn(chatId: Long) = canRestrictMembers(chatId, this.id)
 
     companion object {
         private fun getChatMemberAsJSON(chatId: Long, userId: Int): String {
             val input = URL(
-                "https://https://api.telegram.org/bot${Services.handler.botToken}/" +
+                "https://api.telegram.org/bot${Services.handler.botToken}/" +
                         "getChatMember?chat_id=$chatId&user_id=$userId"
             ).openConnection().getInputStream()
             val out = ByteArrayOutputStream()
@@ -87,9 +85,18 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             val json = try {
                 getChatMemberAsJSON(chatId, userId)
             } catch (e: IOException) {
+                e.printStackTrace()
                 return false
             }
-            return JSONObject(json).getJSONObject("result")?.getBoolean("can_restrict_members") ?: false
+            println(json)
+            val root = JSONObject(json)
+            if (!root.has("result")) return false
+            val result = root.getJSONObject("result")
+            return when {
+                result.has("can_restrict_members") -> result.getBoolean("can_restrict_members")
+                result.has("status") -> result.getString("status") == "creator"
+                else -> false
+            }
         }
     }
 }
