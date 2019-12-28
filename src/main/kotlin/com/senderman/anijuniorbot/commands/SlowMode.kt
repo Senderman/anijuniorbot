@@ -27,7 +27,7 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
         val params = message.text.split("\\s+".toRegex())
         val time: Int
         try {
-            time = params[0].toInt()
+            time = params[1].toInt()
         } catch (e: NumberFormatException) {
             handler.sendMessage(chatId, "Неверный формат!")
             return
