@@ -5,14 +5,16 @@ import com.senderman.anijuniorbot.AnijuniorBotHandler
 import com.senderman.anijuniorbot.Services
 import com.senderman.anijuniorbot.tempobjects.SlowUser
 import com.senderman.neblib.CommandExecutor
+import org.telegram.telegrambots.meta.api.methods.groupadministration.RestrictChatMember
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.time.Duration
 
 class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
     override val command: String
         get() = "/slowmode"
     override val desc: String
-        get() = "(reply) ограничение кол-ва сообщений в единицу времени (минутах). /slowmode 5. Только для админов"
+        get() = "(reply) ограничение кол-ва сообщений в единицу времени (секундах). /slowmode 5. Только для админов"
 
     override fun execute(message: Message) {
         val chatId = message.chatId
@@ -33,34 +35,30 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             return
         }
 
-        if (!Methods.getMe().call(handler).id.canRestrictIn(chatId)) {
-            handler.sendMessage(chatId, "У бота нет прав на это!")
-            return
-        }
         if (!message.from.id.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return
         }
 
         val userId = message.replyToMessage.from.id
-        Methods.Administration.restrictChatMember()
-            .setChatId(chatId)
-            .setUserId(userId)
-            .setCanSendMessages(false)
-            .forTimePeriod(Duration.ofMinutes(time.toLong()))
-            .call(handler)
+        try {
+            val request = RestrictChatMember()
+                .setChatId(chatId)
+                .setUserId(userId)
+                .setCanSendMessages(false)
+                .forTimePeriod(Duration.ofSeconds(time.toLong()))
+            handler.execute(request)
+        } catch (e: TelegramApiException) {
+            handler.sendMessage(chatId, "У бота нет прав на это!")
+            return
+        }
         handler.slowUsers[userId] = SlowUser(userId, time)
         Services.db.addSlowUser(userId, time)
         handler.sendMessage(chatId, "✅ Слоумод для этого юзера активирован!", message.messageId)
     }
 
-    private fun Int.canRestrictIn(chatId: Long) :Boolean{
-        val admins = Methods.getChatAdministrators(chatId).call(handler)
-        for(admin in admins){
-            if (admin.user.id == this && admin.canRestrictUsers)
-                return true
-        }
-        return false
-
+    private fun Int.canRestrictIn(chatId: Long): Boolean {
+        val member = Methods.getChatMember(chatId, this).call(handler)
+        return member.canRestrictUsers ?: false
     }
 }

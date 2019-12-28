@@ -44,7 +44,7 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
                 .setChatId(chatId)
                 .setUserId(user.userId)
                 .setCanSendMessages(false)
-                .forTimePeriod(Duration.ofMinutes(user.time.toLong()))
+                .forTimePeriod(Duration.ofSeconds(user.time.toLong()))
                 .call(this)
         }
 

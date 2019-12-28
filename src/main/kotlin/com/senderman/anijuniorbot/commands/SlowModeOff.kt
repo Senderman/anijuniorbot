@@ -4,7 +4,9 @@ import com.annimon.tgbotsmodule.api.methods.Methods
 import com.senderman.anijuniorbot.AnijuniorBotHandler
 import com.senderman.anijuniorbot.Services
 import com.senderman.neblib.CommandExecutor
+import org.telegram.telegrambots.meta.api.methods.groupadministration.RestrictChatMember
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 
 class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
     override val command: String
@@ -22,10 +24,6 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
             handler.sendMessage(chatId, "Эта команда используется реплаем!")
             return
         }
-        if (!Methods.getMe().call(handler).id.canRestrictIn(chatId)) {
-            handler.sendMessage(chatId, "У бота нет прав на это!")
-            return
-        }
         if (!message.from.id.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return
@@ -36,26 +34,26 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
             return
         }
 
+        try {
+            val request = RestrictChatMember()
+                .setChatId(chatId)
+                .setUserId(userId)
+                .setCanSendMessages(true)
+                .setCanSendMediaMessages(true)
+                .setCanAddWebPagePreviews(true)
+                .setCanSendOtherMessages(true)
+            handler.execute(request)
+        } catch (e: TelegramApiException) {
+            handler.sendMessage(chatId, "У бота нет прав на это!")
+            return
+        }
         handler.slowUsers.remove(userId)
         Services.db.removeSlowUser(userId)
-        Methods.Administration.restrictChatMember()
-            .setChatId(chatId)
-            .setUserId(userId)
-            .setCanSendMessages(true)
-            .setCanSendMediaMessages(true)
-            .setCanAddWebPagePreviews(true)
-            .setCanSendOtherMessages(true)
-            .call(handler)
         handler.sendMessage(chatId, "✅ Этот юзер больше не слоу!")
     }
 
     private fun Int.canRestrictIn(chatId: Long): Boolean {
-        val admins = Methods.getChatAdministrators(chatId).call(handler)
-        for (admin in admins) {
-            if (admin.user.id == this && admin.canRestrictUsers)
-                return true
-        }
-        return false
-
+        val member = Methods.getChatMember(chatId, this).call(handler)
+        return member.canRestrictUsers ?: false
     }
 }
