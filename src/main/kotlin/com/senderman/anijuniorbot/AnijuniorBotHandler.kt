@@ -19,6 +19,7 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
     init {
         executorKeeper = ExecutorKeeper(this)
         Services.db = MongoDBService()
+        Services.handler = this
         slowUsers = HashMap()
         for (slowpoke in Services.db.getSlowUsers()) {
             slowUsers[slowpoke.userId] = slowpoke
@@ -31,6 +32,8 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
             return null
 
         val message = update.message
+        // don't handle old messages
+        if (message.date + 120 < System.currentTimeMillis() / 1000) return null
 
         val chatId = message.chatId
         if (!message.isUserMessage && chatId != -1001123020018L) {
