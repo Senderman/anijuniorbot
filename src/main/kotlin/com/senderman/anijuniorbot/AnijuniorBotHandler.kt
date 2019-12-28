@@ -8,6 +8,7 @@ import com.senderman.neblib.AbstractExecutorKeeper
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
+import java.time.Duration
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -43,7 +44,7 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
                 .setChatId(chatId)
                 .setUserId(user.userId)
                 .setCanSendMessages(false)
-                .setUntilDateInSeconds(user.time * 60)
+                .forTimePeriod(Duration.ofMinutes(user.time.toLong()))
                 .call(this)
         }
 

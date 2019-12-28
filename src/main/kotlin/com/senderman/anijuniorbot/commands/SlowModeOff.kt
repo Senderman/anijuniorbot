@@ -42,6 +42,9 @@ class SlowModeOff(private val handler: AnijuniorBotHandler) : CommandExecutor {
             .setChatId(chatId)
             .setUserId(userId)
             .setCanSendMessages(true)
+            .setCanSendMediaMessages(true)
+            .setCanAddWebPagePreviews(true)
+            .setCanSendOtherMessages(true)
             .call(handler)
         handler.sendMessage(chatId, "✅ Этот юзер больше не слоу!")
     }

@@ -6,6 +6,7 @@ import com.senderman.anijuniorbot.Services
 import com.senderman.anijuniorbot.tempobjects.SlowUser
 import com.senderman.neblib.CommandExecutor
 import org.telegram.telegrambots.meta.api.objects.Message
+import java.time.Duration
 
 class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
     override val command: String
@@ -46,7 +47,7 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             .setChatId(chatId)
             .setUserId(userId)
             .setCanSendMessages(false)
-            .setUntilDateInSeconds(time * 60)
+            .forTimePeriod(Duration.ofMinutes(time.toLong()))
             .call(handler)
         handler.slowUsers[userId] = SlowUser(userId, time)
         Services.db.addSlowUser(userId, time)
