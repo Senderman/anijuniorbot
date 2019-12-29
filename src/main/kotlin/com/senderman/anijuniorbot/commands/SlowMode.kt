@@ -1,13 +1,14 @@
 package com.senderman.anijuniorbot.commands
 
-import com.annimon.tgbotsmodule.api.methods.Methods
 import com.senderman.anijuniorbot.AnijuniorBotHandler
 import com.senderman.anijuniorbot.Services
 import com.senderman.anijuniorbot.tempobjects.SlowUser
 import com.senderman.neblib.CommandExecutor
 import org.json.JSONObject
+import org.telegram.telegrambots.meta.api.methods.groupadministration.RestrictChatMember
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.User
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.URL
@@ -43,7 +44,7 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             return
         }
         val time = try {
-            var temp: Int = params[1].toInt()
+            val temp = params[1].toInt()
             if (temp < minInterval) minInterval else if (temp > maxInterval) maxInterval else temp
         } catch (e: NumberFormatException) {
             handler.sendMessage(chatId, "Неверный формат!")
@@ -51,7 +52,7 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
         }
 
         val slowUser: SlowUser = try {
-            newSlowUserWithLevel(message.replyToMessage.from.id, time, params[2])
+            newSlowUserWithLevel(message.replyToMessage.from.id, time, level = params[2])
         } catch (e: NumberFormatException) {
             handler.sendMessage(chatId, "Неверный формат!")
             return
@@ -65,23 +66,29 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             return
         }
 
+        if (slowUser.userId in handler.chatAdmins) {
+            handler.sendMessage(chatId, "Нельзя рестриктить админов!")
+            return
+        }
+
         if (!message.from.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return
         }
-        if (!handler.me.canRestrictIn(chatId)) {
+
+        try {
+            val request = RestrictChatMember()
+                .setChatId(chatId)
+                .setUserId(slowUser.userId)
+                .setCanSendMessages(slowUser.canSendMessages)
+                .setCanSendMediaMessages(slowUser.canSendMediaMessages)
+                .setCanSendOtherMessages(slowUser.canSendOtherMessages)
+                .setUntilDate((System.currentTimeMillis() / 1000).toInt() + time)
+            handler.execute(request)
+        } catch (e: TelegramApiException) {
             handler.sendMessage(chatId, "У бота нет прав на это!")
             return
         }
-
-        Methods.Administration.restrictChatMember()
-            .setChatId(chatId)
-            .setUserId(slowUser.userId)
-            .setCanSendMessages(slowUser.canSendMessages)
-            .setCanSendMediaMessages(slowUser.canSendMediaMessages)
-            .setCanSendOtherMessages(slowUser.canSendOtherMessages)
-            .setUntilDateInSeconds((System.currentTimeMillis() / 1000).toInt() + time)
-            .call(handler)
         handler.slowUsers[slowUser.userId] = slowUser
         Services.db.addSlowUser(slowUser)
         handler.sendMessage(chatId, "✅ Слоумод для этого юзера активирован!", message.messageId)
