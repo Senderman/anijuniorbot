@@ -66,11 +66,6 @@ class SlowMode(private val handler: AnijuniorBotHandler) : CommandExecutor {
             return
         }
 
-        if (slowUser.userId in handler.chatAdmins) {
-            handler.sendMessage(chatId, "Нельзя рестриктить админов!")
-            return
-        }
-
         if (!message.from.canRestrictIn(chatId)) {
             handler.sendMessage(chatId, "У вас нет прав на это!")
             return

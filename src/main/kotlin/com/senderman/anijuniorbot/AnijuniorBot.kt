@@ -20,5 +20,5 @@ class AnijuniorBot : BotModule {
 
 fun main(args: Array<String>) {
     val profile = if (args.isNotEmpty() && args[0].isNotEmpty()) args[0] else ""
-    Runner.run(profile, listOf<BotModule>(AnijuniorBot()))
+    Runner.run(profile, listOf(AnijuniorBot()))
 }

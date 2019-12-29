@@ -15,14 +15,11 @@ import kotlin.collections.HashSet
 class AnijuniorBotHandler internal constructor() : BotHandler() {
     private val executorKeeper: AbstractExecutorKeeper
     val slowUsers: MutableMap<Int, SlowUser>
-    val chatAdmins: MutableSet<Int>
 
     init {
         executorKeeper = ExecutorKeeper(this)
         Services.db = MongoDBService()
         Services.handler = this
-        chatAdmins = HashSet()
-        loadChatAdmins()
         slowUsers = HashMap()
         for (slowpoke in Services.db.getSlowUsers()) {
             slowUsers[slowpoke.userId] = slowpoke
@@ -89,18 +86,6 @@ class AnijuniorBotHandler internal constructor() : BotHandler() {
 
     override fun getBotToken(): String {
         return Services.config.login.split(" ".toRegex(), 2)[1]
-    }
-
-    private fun loadChatAdmins(){
-        val admins = Methods.getChatAdministrators(Services.config.mainChat).call(this)
-        for (admin in admins){
-            chatAdmins.add(admin.user.id)
-        }
-    }
-
-    fun reloadChatAdmins(){
-        chatAdmins.clear()
-        loadChatAdmins()
     }
 
     private fun filterSlowMode(user: SlowUser, message: Message) {
